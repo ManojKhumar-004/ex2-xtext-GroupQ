@@ -1,3 +1,9 @@
+#### 💯Points: ![Points bar](../../blob/badges/.github/badges/points-bar.svg)
+
+#### 📝 [Report](../../blob/badges/report.md)
+
+---
+
 # Xtext Assignment
 
 This project is an assignment for assessing the learning of Xtext, a framework for the development of programming languages and domain-specific languages (DSLs). Make sure to initially access this repository via the GitHub Classroom link provided by your instructor (this creates a copy of the repository for you) and follow the instructions below to complete the assignment.
