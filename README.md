@@ -14,9 +14,16 @@ Before you start working on the assignment, make sure that you have completed th
 
 Your implementation must follow the structure and style of the tutorial.
 
+## Application Domain: {{domain_name}}
+
+You are tasked with building a textual Domain Specific Language (DSL) for access control in a **{{domain_name}}** system. 
+
+Writing security policies in raw code is dangerous and error-prone. In this exercise, you will build a DSL with Xtext that models these rules using a clean, readable syntax tailored specifically to the **{{domain_name}}** domain. Then, you will write a generator that compiles the textual models with extension `rbac` into Java, allowing us to automatically evaluate the policies for a given scenario.
+
+
 ## Language Syntax by Example
 
-The grammar should be developed by looking at how the concrete language elements are structured in the text file. 
+The grammar should be developed by looking at how the concrete language elements are structured in the examples of `*.rbac` files below. 
 
 ### Basic Declarations
 Before you can use actors (keyword `{{keyword_actor}}`), assets (keyword `{{keyword_asset}}`), and operations (keyword `{{keyword_operation}}`) in access rules, they must be declared. Declarations can appear in any order at the top level of your document:
