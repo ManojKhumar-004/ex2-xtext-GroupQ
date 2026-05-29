@@ -1,0 +1,6 @@
+grammar gse.xtext.assignment.AccessPolicies with org.eclipse.xtext.common.Terminals
+
+generate accessPolicies "http://www.xtext.gse/assignment/AccessPolicies"
+
+Model:
+	todo?='TODO';
