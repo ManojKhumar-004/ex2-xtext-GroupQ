@@ -35,7 +35,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run tests and generate report.md
+      - name: Run Maven Tests
+        run: |
+          set -o pipefail
+          mvn -B clean verify | tee maven.log
+        continue-on-error: true
+
+      - name: Generate report.md
         id: test
         run: python automate/testReport.py || true
         # || true so the step never fails — test outcomes are reflected in report.md and the points badge

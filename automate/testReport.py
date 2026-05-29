@@ -47,42 +47,23 @@ def _extract_maven_error_lines(output: str) -> list[str]:
     return lines[:8]
 
 
-def run_tests() -> tuple[int, datetime, list[str]]:
-    run_started_at = datetime.now(timezone.utc)
-
-    if os.name == "nt":
-        # On Windows, Maven is typically available as mvn.cmd via PATH.
-        result = subprocess.run(
-            "mvn.cmd clean verify",
-            check=False,
-            shell=True,
-            text=True,
-            capture_output=True,
-            encoding="utf-8",
-        )
-    else:
-        result = subprocess.run(
-            ["mvn", "clean", "verify"],
-            check=False,
-            text=True,
-            capture_output=True,
-            encoding="utf-8",
-        )
-
-    if result.stdout:
-        print(result.stdout, end="")
-    if result.stderr:
-        print(result.stderr, end="", file=sys.stderr)
-
-    combined_output = (result.stdout or "") + "\n" + (result.stderr or "")
-    return result.returncode, run_started_at, _extract_maven_error_lines(combined_output)
+def read_maven_log(log_path: str) -> tuple[int, list[str]]:
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            output = f.read()
+    except FileNotFoundError:
+        return 1, ["maven.log not found. Did the Maven build run?"]
+    
+    # Infer exit code from Maven output
+    maven_exit_code = 1 if "BUILD FAILURE" in output else 0
+    return maven_exit_code, _extract_maven_error_lines(output)
 
 
 def _strip_ns(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _candidate_report_files(root: Path, run_started_at: datetime) -> list[Path]:
+def _candidate_report_files(root: Path) -> list[Path]:
     patterns = [
         "**/target/surefire-reports/TEST-*.xml",
         "**/target/failsafe-reports/TEST-*.xml",
@@ -92,17 +73,10 @@ def _candidate_report_files(root: Path, run_started_at: datetime) -> list[Path]:
     ]
 
     found: dict[str, Path] = {}
-    started_ts = run_started_at.timestamp()
 
     for pattern in patterns:
         for path in root.glob(pattern):
             if path.is_file():
-                # Ignore stale reports from earlier runs; keep only files written in this run.
-                try:
-                    if path.stat().st_mtime < (started_ts - 2):
-                        continue
-                except OSError:
-                    continue
                 found[str(path.resolve())] = path
 
     return sorted(found.values(), key=lambda p: str(p))
@@ -134,8 +108,8 @@ def _extract_hint(message: str) -> str:
     return " | ".join(useful[:2])
 
 
-def parse_junit_reports(root: Path, run_started_at: datetime) -> dict[str, Any]:
-    files = _candidate_report_files(root, run_started_at)
+def parse_junit_reports(root: Path) -> dict[str, Any]:
+    files = _candidate_report_files(root)
 
     suites: list[dict[str, Any]] = []
     total = 0
@@ -317,8 +291,8 @@ def build_report(
 
 
 if __name__ == "__main__":
-    maven_exit_code, run_started_at, maven_error_lines = run_tests()
-    data = parse_junit_reports(Path.cwd(), run_started_at)
+    maven_exit_code, maven_error_lines = read_maven_log("maven.log")
+    data = parse_junit_reports(Path.cwd())
 
     report = build_report(data, maven_exit_code, maven_error_lines)
     with open(REPORT_PATH, "w", encoding="utf-8") as file_handle:
