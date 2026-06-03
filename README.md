@@ -14,11 +14,11 @@ Before you start working on the assignment, make sure that you have completed th
 
 Your implementation must follow the structure and style of the tutorial.
 
-## Application Domain: {{domain_name}}
+## Application Domain: Smart Home
 
-You are tasked with building a textual Domain Specific Language (DSL) for access control in a **{{domain_name}}** system. 
+You are tasked with building a textual Domain Specific Language (DSL) for access control in a **Smart Home** system. 
 
-Writing security policies in raw code is dangerous and error-prone. In this exercise, you will build a DSL with Xtext that models these rules using a clean, readable syntax tailored specifically to the **{{domain_name}}** domain. Then, you will write a generator that compiles the textual models with extension `rbac` into Java, allowing us to automatically evaluate the policies for a given scenario.
+Writing security policies in raw code is dangerous and error-prone. In this exercise, you will build a DSL with Xtext that models these rules using a clean, readable syntax tailored specifically to the **Smart Home** domain. Then, you will write a generator that compiles the textual models with extension `rbac` into Java, allowing us to automatically evaluate the policies for a given scenario.
 
 
 ## Language Syntax by Example
@@ -26,44 +26,44 @@ Writing security policies in raw code is dangerous and error-prone. In this exer
 The grammar should be developed by looking at how the concrete language elements are structured in the examples of `*.rbac` files below. 
 
 ### Basic Declarations
-Before you can use actors (keyword `{{keyword_actor}}`), assets (keyword `{{keyword_asset}}`), and operations (keyword `{{keyword_operation}}`) in access rules, they must be declared. Declarations can appear in any order at the top level of your document:
+Before you can use actors (keyword `user`), assets (keyword `device`), and operations (keyword `command`) in access rules, they must be declared. Declarations can appear in any order at the top level of your document:
 
 ```text
 // Declaring standalone actors
-{{keyword_actor}} {{example_actor1}}
+user Resident
 
 // Declaring resources being protected
-{{keyword_asset}} {{example_asset1}}
+device FrontDoor
 
 // Declaring operations that can be performed
-{{keyword_operation}} {{example_operation1}}
+command lock
 ```
 
 ### Actor Inheritance
 Actors can inherit permissions from other previously declared actors. This is represented by declaring a child actor followed by the keyword `inherits` and the parent actor's identifier:
 
 ```text
-{{keyword_actor}} {{example_actor1}}
+user Resident
 
-// {{example_actor2}} inherits all permissions defined for {{example_actor1}}
-{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
+// Alice inherits all permissions defined for Resident
+user Alice inherits Resident
 ```
 
 ### Policies, Scopes, and Rules
-A policy (keyword `{{keyword_policy}}`) groups security configurations inside a named block using curly braces. Within a policy, rules are grouped (keyword `{{keyword_scope}}`) by the actor they apply to (the actor's scope block). 
+A policy (keyword `home_profile`) groups security configurations inside a named block using curly braces. Within a policy, rules are grouped (keyword `for_user`) by the actor they apply to (the actor's scope block). 
 
-Each rule specifies whether a single operation is allowed (keyword `{{keyword_allow}}`) or denied (keyword `{{keyword_deny}}`) on a single asset using the  keyword `on`. 
+Each rule specifies whether a single operation is allowed (keyword `grant`) or denied (keyword `revoke`) on a single asset using the  keyword `on`. 
 
 ```text
-{{keyword_policy}} {{example_policy}} {
+home_profile NightMode {
     
-    // Define a scope block for {{example_actor1}}
-    {{keyword_scope}} {{example_actor1}} {
+    // Define a scope block for Resident
+    for_user Resident {
         // An allow rule: 1 operation on 1 asset
-        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+        grant lock on FrontDoor
 
         // A deny rule: 1 operation on 1 asset
-        {{keyword_deny}} {{example_operation2}} on {{example_asset1}}
+        revoke unlock on FrontDoor
     }
 }
 ```
@@ -74,39 +74,39 @@ A complete, valid document (`example.rbac`) in your DSL combining all of these s
 
 ```text
 // Actor hierarchy
-{{keyword_actor}} {{example_actor1}}
-{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
-{{keyword_actor}} {{example_actor3}} inherits {{example_actor1}}
+user Resident
+user Alice inherits Resident
+user Bob inherits Resident
 
 // Assets
-{{keyword_asset}} {{example_asset1}}
-{{keyword_asset}} {{example_asset2}}
+device FrontDoor
+device Thermostat
 
 // Operations
-{{keyword_operation}} {{example_operation1}}
-{{keyword_operation}} {{example_operation2}}
-{{keyword_operation}} {{example_operation3}}
+command lock
+command unlock
+command set_temperature
 
 // Security Policy
-{{keyword_policy}} {{example_policy}} {
-    {{keyword_scope}} {{example_actor1}} {
-        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
-        {{keyword_deny}} {{example_operation2}} on {{example_asset1}}
+home_profile NightMode {
+    for_user Resident {
+        grant lock on FrontDoor
+        revoke unlock on FrontDoor
     }
 }
 
 // Another Security Policy
-{{keyword_policy}} {{example_policy}}2 {
+home_profile NightMode2 {
     // Rules for the first inheriting actor
-    {{keyword_scope}} {{example_actor2}} {
-        {{keyword_allow}} {{example_operation1}} on {{example_asset2}}
-        {{keyword_deny}} {{example_operation3}} on {{example_asset2}}
+    for_user Alice {
+        grant lock on Thermostat
+        revoke set_temperature on Thermostat
     }
 
     // Rules for the second inheriting actor
-    {{keyword_scope}} {{example_actor3}} {
-        {{keyword_allow}} {{example_operation2}} on {{example_asset1}}
-        {{keyword_allow}} {{example_operation3}} on {{example_asset2}}
+    for_user Bob {
+        grant unlock on FrontDoor
+        grant set_temperature on Thermostat
     }
 }
 ```

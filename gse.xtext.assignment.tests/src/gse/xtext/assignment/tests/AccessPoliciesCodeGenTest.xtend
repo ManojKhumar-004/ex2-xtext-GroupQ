@@ -57,13 +57,13 @@ class AccessPoliciesCodeGenTest {
 	}
 
 	val String example = '''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_operation}} {{example_operation1}}
+		user Resident
+		device FrontDoor
+		command lock
 		
-		{{keyword_policy}} {{example_policy}} {
-		    {{keyword_scope}} {{example_actor1}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+		home_profile NightMode {
+		    for_user Resident {
+		        grant lock on FrontDoor
 		    }
 		}
 	'''
@@ -112,78 +112,78 @@ class AccessPoliciesCodeGenTest {
 
 	@Test
 	def void testPositivePolicy() {
-		assertIsAllowed(example, "{{example_actor1}}", "{{example_operation1}}", "{{example_asset1}}")
+		assertIsAllowed(example, "Resident", "lock", "FrontDoor")
 	}
 
 	@Test
 	def void testPositivePolicyMultiple() {
-		assertIsAllowed(example, "{{example_actor1}}", "{{example_operation1}}", "{{example_asset1}}")
+		assertIsAllowed(example, "Resident", "lock", "FrontDoor")
 	}
 
 	@Test
 	def void testPositivePolicyWrongActor() {
 		val code = '''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_actor}} {{example_actor2}}
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_asset}} {{example_asset2}}
-		{{keyword_operation}} {{example_operation1}}
+		user Resident
+		user Alice
+		device FrontDoor
+		device Thermostat
+		command lock
 		
-		{{keyword_policy}} {{example_policy}} {
-		    {{keyword_scope}} {{example_actor1}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+		home_profile NightMode {
+		    for_user Resident {
+		        grant lock on FrontDoor
 		    }
 		}
-		{{keyword_policy}} Data_Access {
-		    {{keyword_scope}} {{example_actor2}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset2}}
+		home_profile Data_Access {
+		    for_user Alice {
+		        grant lock on Thermostat
 		    }
 		}
 		'''
-		assertIsDenied(code, "{{example_actor2}}", "{{example_operation1}}", "{{example_asset1}}")
-		assertIsAllowed(code, "{{example_actor1}}", "{{example_operation1}}", "{{example_asset1}}")
+		assertIsDenied(code, "Alice", "lock", "FrontDoor")
+		assertIsAllowed(code, "Resident", "lock", "FrontDoor")
 		
-		assertIsDenied(code, "{{example_actor1}}", "{{example_operation1}}", "{{example_asset2}}")
-		assertIsAllowed(code, "{{example_actor2}}", "{{example_operation1}}", "{{example_asset2}}")
+		assertIsDenied(code, "Resident", "lock", "Thermostat")
+		assertIsAllowed(code, "Alice", "lock", "Thermostat")
 	}
 
 	@Test
 	def void testInheritance() {
 		val code = '''
-			{{keyword_actor}} {{example_actor1}}
-			{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
-			{{keyword_asset}} {{example_asset1}}
-			{{keyword_operation}} {{example_operation1}}
-			{{keyword_operation}} {{example_operation2}}
+			user Resident
+			user Alice inherits Resident
+			device FrontDoor
+			command lock
+			command unlock
 			
-			{{keyword_policy}} {{example_policy}} {
-			    {{keyword_scope}} {{example_actor1}} {
-			        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+			home_profile NightMode {
+			    for_user Resident {
+			        grant lock on FrontDoor
 			    }
 			}
 		'''
-		assertIsDenied(code, "{{example_actor2}}", "{{example_operation2}}", "{{example_asset1}}")
-		assertIsAllowed(code, "{{example_actor2}}", "{{example_operation1}}", "{{example_asset1}}")
+		assertIsDenied(code, "Alice", "unlock", "FrontDoor")
+		assertIsAllowed(code, "Alice", "lock", "FrontDoor")
 	}
 
 	@Test
 	def void testInheritanceTransitive() {
 		val code = '''
-			{{keyword_actor}} {{example_actor1}}
-			{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
-			{{keyword_actor}} {{example_actor3}} inherits {{example_actor2}}
-			{{keyword_asset}} {{example_asset1}}
-			{{keyword_operation}} {{example_operation1}}
-			{{keyword_operation}} {{example_operation2}}
+			user Resident
+			user Alice inherits Resident
+			user Bob inherits Alice
+			device FrontDoor
+			command lock
+			command unlock
 			
-			{{keyword_policy}} {{example_policy}} {
-			    {{keyword_scope}} {{example_actor1}} {
-			        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+			home_profile NightMode {
+			    for_user Resident {
+			        grant lock on FrontDoor
 			    }		    
 			}
 		'''
-		assertIsDenied(code, "{{example_actor3}}", "{{example_operation2}}", "{{example_asset1}}")
-		assertIsAllowed(code, "{{example_actor3}}", "{{example_operation1}}", "{{example_asset1}}")
+		assertIsDenied(code, "Bob", "unlock", "FrontDoor")
+		assertIsAllowed(code, "Bob", "lock", "FrontDoor")
 	}
 
 }

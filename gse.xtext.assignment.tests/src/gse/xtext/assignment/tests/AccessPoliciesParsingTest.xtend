@@ -47,23 +47,23 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parseActor() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
+		user Resident
 		''')
 	}
 	
 	@Test
 	def void parseActorsInherit() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
+		user Resident
+		user Alice inherits Resident
 		''')
 	}
 	
 	@Test
 	def void parseActorsBadInherit() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_actor}} {{example_actor2}} inherits XXX
+		user Resident
+		user Alice inherits XXX
 		''', false)
 	}
 	
@@ -71,32 +71,32 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parseAsset() {
 		parseTest('''
-		{{keyword_asset}} {{example_asset1}}
+		device FrontDoor
 		''')
 	}
 
 	@Test
 	def void parseAssets() {
 		parseTest('''
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_asset}} {{example_asset2}}
+		device FrontDoor
+		device Thermostat
 		''')
 	}
 	
 	@Test
 	def void parseOperation() {
 		parseTest('''
-		{{keyword_operation}} {{example_operation1}}
+		command lock
 		''')
 	}
 	
 	@Test
 	def void parseActorAssetOperation() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_operation}} {{example_operation1}}
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_actor}} {{example_actor3}} inherits {{example_actor1}}
+		user Resident
+		command lock
+		device FrontDoor
+		user Bob inherits Resident
 		''')
 	}
 	
@@ -104,16 +104,16 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parseEmptyPolicy() {
 		parseTest('''
-		{{keyword_policy}} {{example_policy}} {
+		home_profile NightMode {
 		}
 		''')
 	}
 	@Test
 	def void parsePolicyWithActor() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_policy}} {{example_policy}} {
-			{{keyword_scope}} {{example_actor1}} {
+		user Resident
+		home_profile NightMode {
+			for_user Resident {
 			}
 		}
 		''')
@@ -122,12 +122,12 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parsePolicyWithActors() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_actor}} {{example_actor2}}
-		{{keyword_policy}} {{example_policy}} {
-			{{keyword_scope}} {{example_actor1}} {
+		user Resident
+		user Alice
+		home_profile NightMode {
+			for_user Resident {
 			}
-			{{keyword_scope}} {{example_actor2}} {
+			for_user Alice {
 			}
 		}
 		''')
@@ -136,13 +136,13 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parsePolicyWithActorAndRule() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_operation}} {{example_operation1}}
+		user Resident
+		device FrontDoor
+		command lock
 		
-		{{keyword_policy}} {{example_policy}} {
-		    {{keyword_scope}} {{example_actor1}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
+		home_profile NightMode {
+		    for_user Resident {
+		        grant lock on FrontDoor
 		    }
 		}
 		''')
@@ -151,15 +151,15 @@ class AccessPoliciesParsingTest {
 	@Test
 	def void parsePolicyWithActorAndRules() {
 		parseTest('''
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_operation}} {{example_operation1}}
-		{{keyword_operation}} {{example_operation2}}
+		user Resident
+		device FrontDoor
+		command lock
+		command unlock
 		
-		{{keyword_policy}} {{example_policy}} {
-		    {{keyword_scope}} {{example_actor1}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
-		        {{keyword_deny}} {{example_operation2}} on {{example_asset1}}
+		home_profile NightMode {
+		    for_user Resident {
+		        grant lock on FrontDoor
+		        revoke unlock on FrontDoor
 		    }
 		}
 		''')
@@ -169,34 +169,34 @@ class AccessPoliciesParsingTest {
 	def void parseFullScenario() {
 		parseTest('''
 		// Actor hierarchy
-		{{keyword_actor}} {{example_actor1}}
-		{{keyword_actor}} {{example_actor2}} inherits {{example_actor1}}
-		{{keyword_actor}} {{example_actor3}} inherits {{example_actor1}}
+		user Resident
+		user Alice inherits Resident
+		user Bob inherits Resident
 		
 		// Assets
-		{{keyword_asset}} {{example_asset1}}
-		{{keyword_asset}} {{example_asset2}}
+		device FrontDoor
+		device Thermostat
 		
 		// Operations
-		{{keyword_operation}} {{example_operation1}}
-		{{keyword_operation}} {{example_operation2}}
-		{{keyword_operation}} {{example_operation3}}
+		command lock
+		command unlock
+		command set_temperature
 		
 		// Security Policy
-		{{keyword_policy}} {{example_policy}} {
-		    {{keyword_scope}} {{example_actor1}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset1}}
-		        {{keyword_deny}} {{example_operation2}} on {{example_asset1}}
+		home_profile NightMode {
+		    for_user Resident {
+		        grant lock on FrontDoor
+		        revoke unlock on FrontDoor
 		    }
 		
-		    {{keyword_scope}} {{example_actor2}} {
-		        {{keyword_allow}} {{example_operation1}} on {{example_asset2}}
-		        {{keyword_deny}} {{example_operation3}} on {{example_asset2}}
+		    for_user Alice {
+		        grant lock on Thermostat
+		        revoke set_temperature on Thermostat
 		    }
 		
-		    {{keyword_scope}} {{example_actor3}} {
-		        {{keyword_allow}} {{example_operation2}} on {{example_asset1}}
-		        {{keyword_allow}} {{example_operation3}} on {{example_asset2}}
+		    for_user Bob {
+		        grant unlock on FrontDoor
+		        grant set_temperature on Thermostat
 		    }
 		}
 		''')
