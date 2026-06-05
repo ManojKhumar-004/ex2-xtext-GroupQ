@@ -3,4 +3,52 @@ grammar gse.xtext.assignment.AccessPolicies with org.eclipse.xtext.common.Termin
 generate accessPolicies "http://www.xtext.gse/assignment/AccessPolicies"
 
 Model:
-	todo?='TODO';
+    elements+=Element*
+;
+
+Element:
+    User | Device | Command | Policy
+;
+
+User:
+    'user' name=ID
+    ('inherits' parent=[User])?
+;
+
+Device:
+    'device' name=ID
+;
+
+Command:
+    'command' name=ID
+;
+
+Policy:
+    'home_profile' name=ID '{'
+        scopes+=Scope*
+    '}'
+;
+
+Scope:
+    'for_user' user=[User] '{'
+        rules+=Rule*
+    '}'
+;
+
+Rule:
+    GrantRule | RevokeRule
+;
+
+GrantRule:
+    'grant'
+    command=[Command]
+    'on'
+    device=[Device]
+;
+
+RevokeRule:
+    'revoke'
+    command=[Command]
+    'on'
+    device=[Device]
+;

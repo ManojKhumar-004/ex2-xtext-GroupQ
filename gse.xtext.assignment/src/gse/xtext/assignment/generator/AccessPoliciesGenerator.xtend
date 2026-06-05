@@ -3,12 +3,11 @@
  */
 package gse.xtext.assignment.generator
 
-import gse.xtext.assignment.accessPolicies.Model
+import gse.xtext.assignment.accessPolicies.*
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
-
 
 /**
  * Generates code from your model files on save.
@@ -17,10 +16,105 @@ import org.eclipse.xtext.generator.IGeneratorContext
  */
 class AccessPoliciesGenerator extends AbstractGenerator {
 
-	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		val model = resource.contents.head as Model
-		fsa.generateFile('SecurityEvaluator.java', 'TODO')
-	}
+	    override void doGenerate(Resource resource,
+    IFileSystemAccess2 fsa,
+    IGeneratorContext context) {
 
+    if (resource.contents.empty) {
+        return
+    }
 
+    val root = resource.contents.head
+
+    if (!(root instanceof Model)) {
+        return
+    }
+
+    val model = root as Model
+
+    fsa.generateFile(
+        "SecurityEvaluator.java",
+        model.generateJava.toString
+    )
+}
+
+    dispatch def CharSequence generateJava(Model model)
+    '''
+    public class SecurityEvaluator {
+
+        public static boolean isAllowed(String actor, String operation, String asset) {
+
+            «FOR e : model.elements»
+                «generateJava(e, model)»
+            «ENDFOR»
+
+            return false;
+        }
+    }
+    '''
+
+    dispatch def CharSequence generateJava(Element e, Model model)
+    ''''''
+
+    dispatch def CharSequence generateJava(Policy policy, Model model)
+    '''
+        «FOR s : policy.scopes»
+            «generateJava(s, model)»
+        «ENDFOR»
+    '''
+
+    dispatch def CharSequence generateJava(Scope scope, Model model)
+    '''
+        «FOR r : scope.rules»
+            «generateJava(r, scope.user, model)»
+        «ENDFOR»
+    '''
+
+    dispatch def CharSequence generateJava(Rule rule, User user, Model model)
+    ''''''
+
+    dispatch def CharSequence generateJava(GrantRule rule, User user, Model model)
+    '''
+        if (
+            operation.equals("«rule.command.name»")
+            &&
+            asset.equals("«rule.device.name»")
+            &&
+            (
+                «actorMatches(user, model)»
+            )
+        ) {
+            return true;
+        }
+    '''
+
+    dispatch def CharSequence generateJava(RevokeRule rule, User user, Model model)
+    ''''''
+
+    def String actorMatches(User target, Model model) {
+
+        val users = model.elements.filter(User)
+
+        val matching =
+            users.filter[
+                it == target || inheritsFrom(it, target)
+            ]
+
+        matching.map[
+            'actor.equals("' + name + '")'
+        ].join(" || ")
+    }
+
+    def boolean inheritsFrom(User child, User ancestor) {
+        var current = child.parent
+
+        while(current !== null) {
+            if(current == ancestor)
+                return true
+
+            current = current.parent
+        }
+
+        false
+    }
 }
